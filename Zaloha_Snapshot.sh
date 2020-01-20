@@ -139,6 +139,10 @@ Zaloha_Snapshot.sh --backupDir=<backupDir> --snapDir=<snapDir> [ other options ]
 
 --noProgress    ... suppress progress messages (no screen output).
 
+--mawk          ... use mawk, the very fast AWK implementation based on a
+                    bytecode interpreter. Without this option, awk is used,
+                    which usually maps to GNU awk (but not always).
+
 --lTest         ... (do not use in real operations) support for lint-testing
                     of AWK programs
 
@@ -330,6 +334,7 @@ noExec=0
 noSnapHdr=0
 saveSpace=0
 noProgress=0
+mawk=0
 lTest=0
 help=0
 
@@ -342,6 +347,7 @@ do
     --noSnapHdr)         noSnapHdr=1 ;;
     --saveSpace)         saveSpace=1 ;;
     --noProgress)        noProgress=1 ;;
+    --mawk)              mawk=1 ;;
     --lTest)             lTest=1 ;;
     --help)              help=1 ;;
     *) error_exit "Unknown option ${tmpVal}, get help via Zaloha_Snapshot.sh --help" ;;
@@ -357,9 +363,12 @@ if [ ${noSnapHdr} -eq 1 ] && [ ${noExec} -eq 0 ]; then
   error_exit "Option --noSnapHdr can be used only together with option --noExec"
 fi
 
-awkLint=
-if [ ${lTest} -eq 1 ]; then
-  awkLint="-Lfatal"
+if [ ${mawk} -eq 1 ]; then
+  awk="mawk"
+elif [ ${lTest} -eq 1 ]; then
+  awk="awk -Lfatal"
+else
+  awk="awk"
 fi
 
 ###########################################################
@@ -440,7 +449,7 @@ cp --preserve=timestamps "${metaDirBackup}${f700Base}" "${f700}"
 stop_progress
 
 ###########################################################
-awk ${awkLint} '{ print }' << SNAPPARAMFILE > "${f900}"
+${awk} '{ print }' << SNAPPARAMFILE > "${f900}"
 ${TRIPLET}${FSTAB}backupDir${FSTAB}${backupDir}${FSTAB}${TRIPLET}
 ${TRIPLET}${FSTAB}backupDirAwk${FSTAB}${backupDirAwk}${FSTAB}${TRIPLET}
 ${TRIPLET}${FSTAB}backupDirEsc${FSTAB}${backupDirEsc}${FSTAB}${TRIPLET}
@@ -455,11 +464,12 @@ ${TRIPLET}${FSTAB}noExec${FSTAB}${noExec}${FSTAB}${TRIPLET}
 ${TRIPLET}${FSTAB}noSnapHdr${FSTAB}${noSnapHdr}${FSTAB}${TRIPLET}
 ${TRIPLET}${FSTAB}saveSpace${FSTAB}${saveSpace}${FSTAB}${TRIPLET}
 ${TRIPLET}${FSTAB}noProgress${FSTAB}${noProgress}${FSTAB}${TRIPLET}
+${TRIPLET}${FSTAB}mawk${FSTAB}${mawk}${FSTAB}${TRIPLET}
 ${TRIPLET}${FSTAB}lTest${FSTAB}${lTest}${FSTAB}${TRIPLET}
 SNAPPARAMFILE
 
 ###########################################################
-awk ${awkLint} -f "${f100}" << 'AWKSNAPCHECK' > "${f910}"
+${awk} -f "${f100}" << 'AWKSNAPCHECK' > "${f910}"
 DEFINE_ERROR_EXIT
 BEGIN {
   FS = FSTAB
@@ -502,12 +512,12 @@ AWKSNAPCHECK
 
 start_progress "Checking of compatibility of Zaloha parameters"
 
-awk ${awkLint} -f "${f910}" "${f000}"
+${awk} -f "${f910}" "${f000}"
 
 stop_progress
 
 ###########################################################
-awk ${awkLint} -f "${f100}" << 'AWKSNAPSHOT' > "${f920}"
+${awk} -f "${f100}" << 'AWKSNAPSHOT' > "${f920}"
 BEGIN {
   FS = FSTAB
   pin = 1         # parallel index
@@ -566,13 +576,12 @@ AWKSNAPSHOT
 
 start_progress "Preparing shellscript to create snapshot directory"
 
-awk ${awkLint}                      \
-    -f "${f920}"                    \
-    -v backupDir="${backupDirAwk}"  \
-    -v snapDir="${snapDirAwk}"      \
-    -v noExec=${noExec}             \
-    -v noSnapHdr=${noSnapHdr}       \
-    "${f505}"                       > "${f930}"
+${awk} -f "${f920}"                    \
+       -v backupDir="${backupDirAwk}"  \
+       -v snapDir="${snapDirAwk}"      \
+       -v noExec=${noExec}             \
+       -v noSnapHdr=${noSnapHdr}       \
+       "${f505}"                       > "${f930}"
 
 stop_progress
 

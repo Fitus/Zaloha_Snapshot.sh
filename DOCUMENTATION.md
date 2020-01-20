@@ -113,6 +113,10 @@ Then, Zaloha_Snapshot is incompatible with some operation modes of Zaloha:
 
 <b>--noProgress</b>    ... suppress progress messages (no screen output).
 
+<b>--mawk</b>          ... use mawk, the very fast AWK implementation based on a
+                    bytecode interpreter. Without this option, awk is used,
+                    which usually maps to GNU awk (but not always).
+
 <b>--lTest</b>         ... (do not use in real operations) support for lint-testing
                     of AWK programs
 
