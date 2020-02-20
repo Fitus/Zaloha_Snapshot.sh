@@ -260,6 +260,7 @@ f000Base="000_parameters.csv"        # parameters under which Zaloha was invoked
 f100Base="100_awkpreproc.awk"        # AWK preprocessor for other AWK programs
 f505Base="505_target.csv"            # target state (includes Exec2 and Exec3 actions) of synchronized directories
 f700Base="700_restore.awk"           # AWK program for preparation of shellscripts for the case of restore
+f999Base="999_mark_executed"         # empty touchfile marking execution of actions
 
 # FILES CREATED BY ZALOHA_SNAPSHOT
 
@@ -274,11 +275,17 @@ set -e
 set -o pipefail
 
 function error_exit {
-  echo "Zaloha.sh: ${1}" >&2
+  echo "Zaloha_Snapshot.sh: ${1}" >&2
   exit 1
 }
 
 trap 'error_exit "Error on line ${LINENO}"' ERR
+
+function opt_dupli_check {
+  if [ ${1} -eq 1 ]; then
+    error_exit "Option ${2} passed in two or more times"
+  fi
+}
 
 function start_progress {
   if [ ${noProgress} -eq 0 ]; then
@@ -318,9 +325,11 @@ function stop_progress {
 TAB=$'\t'
 NLINE=$'\n'
 BSLASHPATTERN='\\'
+CNTRLPATTERN='[[:cntrl:]]'
 TRIPLETT='///t'      # escape for tab
 TRIPLETN='///n'      # escape for newline
 TRIPLETB='///b'      # escape for backslash
+TRIPLETC='///c'      # display of control characters on terminal
 TRIPLET='///'        # escape sequence, leading field, terminator field
 
 FSTAB=$'\t'
@@ -329,7 +338,9 @@ DOTS60="${BLANKS60// /.}"
 
 ###########################################################
 backupDir=
+backupDirPassed=0
 snapDir=
+snapDirPassed=0
 noExec=0
 noSnapHdr=0
 saveSpace=0
@@ -341,16 +352,16 @@ help=0
 for tmpVal in "${@}"
 do
   case "${tmpVal}" in
-    --backupDir=*)       backupDir="${tmpVal#*=}" ;;
-    --snapDir=*)         snapDir="${tmpVal#*=}" ;;
-    --noExec)            noExec=1 ;;
-    --noSnapHdr)         noSnapHdr=1 ;;
-    --saveSpace)         saveSpace=1 ;;
-    --noProgress)        noProgress=1 ;;
-    --mawk)              mawk=1 ;;
-    --lTest)             lTest=1 ;;
-    --help)              help=1 ;;
-    *) error_exit "Unknown option ${tmpVal}, get help via Zaloha_Snapshot.sh --help" ;;
+    --backupDir=*)       opt_dupli_check ${backupDirPassed} "${tmpVal%%=*}";  backupDir="${tmpVal#*=}";  backupDirPassed=1 ;;
+    --snapDir=*)         opt_dupli_check ${snapDirPassed} "${tmpVal%%=*}";    snapDir="${tmpVal#*=}";    snapDirPassed=1 ;;
+    --noExec)            opt_dupli_check ${noExec} "${tmpVal}";      noExec=1 ;;
+    --noSnapHdr)         opt_dupli_check ${noSnapHdr} "${tmpVal}";   noSnapHdr=1 ;;
+    --saveSpace)         opt_dupli_check ${saveSpace} "${tmpVal}";   saveSpace=1 ;;
+    --noProgress)        opt_dupli_check ${noProgress} "${tmpVal}";  noProgress=1 ;;
+    --mawk)              opt_dupli_check ${mawk} "${tmpVal}";        mawk=1 ;;
+    --lTest)             opt_dupli_check ${lTest} "${tmpVal}";       lTest=1 ;;
+    --help)              opt_dupli_check ${help} "${tmpVal}";        help=1 ;;
+    *) error_exit "Unknown option ${tmpVal//${CNTRLPATTERN}/${TRIPLETC}}, get help via Zaloha_Snapshot.sh --help" ;;
   esac
 done
 
@@ -436,6 +447,11 @@ f900="${metaDirSnap}${f900Base}"
 f910="${metaDirSnap}${f910Base}"
 f920="${metaDirSnap}${f920Base}"
 f930="${metaDirSnap}${f930Base}"
+f999="${metaDirSnap}${f999Base}"
+
+if [ "${metaDirBackup}${f000Base}" -nt "${metaDirBackup}${f999Base}" ]; then
+  error_exit "The actions prepared by Zaloha have not yet been executed"
+fi
 
 start_progress "Copying select files from Zaloha metadata directory"
 
@@ -622,6 +638,14 @@ if [ ${saveSpace} -eq 1 ]; then
   stop_progress
 
 fi
+
+###########################################################
+
+start_progress "Copying file 999 from Zaloha metadata directory"
+
+cp --preserve=timestamps "${metaDirBackup}${f999Base}" "${f999}"
+
+stop_progress
 
 ###########################################################
 
