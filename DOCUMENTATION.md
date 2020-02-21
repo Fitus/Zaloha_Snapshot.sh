@@ -1,7 +1,7 @@
 ### OVERVIEW
 
 <pre>
-Zaloha_Snapshot is an add-on shellscript to Zaloha to create hardlink-based
+Zaloha_Snapshot is an add-on BASH script to Zaloha to create hardlink-based
 snapshots of the backup directory (condition: hardlinks must be supported by the
 underlying filesystem type).
 
