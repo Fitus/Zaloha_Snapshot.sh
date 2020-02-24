@@ -1,7 +1,7 @@
 # Zaloha_Snapshot.sh
 
-Zaloha_Snapshot is an add-on BASH script to [Zaloha](https://github.com/Fitus/Zaloha.sh) to create hardlink-based
-snapshots of the backup directory *(condition: hardlinks must be supported by the
+Zaloha_Snapshot is an add-on script to [Zaloha](https://github.com/Fitus/Zaloha.sh) to create hardlink-based snapshots
+of the backup directory *(condition: hardlinks must be supported by the
 underlying filesystem type)*.
 
 This allows to create **Time Machine**-like backup solutions.
