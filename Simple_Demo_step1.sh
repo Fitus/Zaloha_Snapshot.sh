@@ -1,5 +1,7 @@
 #!/bin/bash
 
+set -e
+
 echo "PREPARING IDENTICAL SOURCE DIRECTORIES 'test_source' AND 'test_source_orig'"
 
 mkdir "test_source"
