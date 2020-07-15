@@ -226,5 +226,5 @@ The AWK program AWKSNAPSHOT then prepares a shellscript to create the contents
 of the snapshot directory (the subdirectories and the hardlinks).
 
 The prepared shellscript is then sourced to perform actual work (unless the
-<b>--noExec</b> option is given.
+<b>--noExec</b> option is given).
 </pre>
